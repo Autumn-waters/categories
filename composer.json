@@ -1,0 +1,14 @@
+{
+    "name": "qiuxinshu/categories",
+    "description": "category",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "qiuxinshu",
+            "email": "qiuxinshu@163.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
