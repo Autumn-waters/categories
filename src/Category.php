@@ -1,6 +1,5 @@
 <?php
 namespace qiuxinshu;
-use think\Db;
 /**
  * Created by PhpStorm.
  * User: Administrator
@@ -52,7 +51,7 @@ class Category
     /*
      * 查询用户下级
      * @param $id用户
-     * $level
+     * @param $level层级
      * */
     public function find_lower($id,$level=null)
     {
@@ -65,9 +64,56 @@ class Category
             $where[] = ['level','<=',$p_data->level+$level];
         }
 
-        $this->model->where($where)->select();
+        return $this->model->where($where)->select();
 
     }
 
+    /*
+     * 查询用户上级
+     * */
+    public function find_uper($id,$level=null)
+    {
+        $p_data = $this->model->find($id);
+        $where = [
+            ['le','<',$p_data->le],
+            ['ri','>',$p_data->ri],
+        ];
+        if($level){
+            $where[] = ['level','>=',$p_data->level-$level];
+        }
+
+        return $this->model->where($where)->select();
+
+    }
+
+    /*
+     * 更改用户
+     * @param $userid要更改的用户
+     * @param $pid更改在哪个用户下
+     * */
+    public function update_user($userid,$pid)
+    {
+        $user = $this->model->find($userid);
+        $p_data = $this->model->find($pid);
+
+        $length = $user->ri-$user->le+1;
+
+        $where = [
+            ['ri','>',$user->ri],
+            ['ri','<',$p_data->ri],
+        ];
+        $this->model->where($where)->setDec('le',$length);
+        $this->model->where($where)->setDec('ri',$length);
+
+        $len = $this->model->where('pid',$pid)->max('ri');
+        $new_length = $len+1-$user->le;
+        $condition = [
+            ['le','>=',$user->le],
+            ['ri','<=',$user->ri],
+        ];
+        $this->model->where($condition)->setInc('le',$new_length);
+        $this->model->where($condition)->setInc('ri',$new_length);
+        return true;
+    }
 
 }
