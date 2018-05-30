@@ -1,5 +1,5 @@
 <?php
-namespace qiuxinshu;
+namespace Qiuxinshu;
 /**
  * Created by PhpStorm.
  * User: Administrator
@@ -31,15 +31,16 @@ class Category
      * @param $level用户层级
      * @param $pid上级用户
      * */
-    public function insert_user($pid)
+    public function insert_user($pid=0)
     {
-        if(isset($pid) || $pid){
+        if($pid){
             $p_data = $this->model->find($pid);
             $le = $p_data->ri;
             $this->model->where('ri','>=',$le)->setInc('ri',2);
-            $this->model->where('le','>',$le)->setInc('left',2);
+            $this->model->where('le','>',$le)->setInc('le',2);
             $ri = $le+1;
             $level = $p_data->level+1;
+            //var_dump($level);exit;
             return $this->model->save(['le'=>$le,'ri'=>$ri,'pid'=>$pid,'level'=>$level]);
         }
         $ri = $this->model->max('ri');
@@ -96,24 +97,55 @@ class Category
         $user = $this->model->find($userid);
         $p_data = $this->model->find($pid);
 
+        $chirdArr = $this->find_chird_collection($user->le,$user->ri);
+
         $length = $user->ri-$user->le+1;
 
         $where = [
             ['ri','>',$user->ri],
             ['ri','<',$p_data->ri],
         ];
-        $this->model->where($where)->setDec('le',$length);
+
+        $where1 = [
+            ['le','>',$user->ri],
+            ['le','<',$p_data->ri],
+        ];
+        $this->model->where($where1)->setDec('le',$length);
         $this->model->where($where)->setDec('ri',$length);
 
-        $len = $this->model->where('pid',$pid)->max('ri');
-        $new_length = $len+1-$user->le;
-        $condition = [
+
+        $len = $this->model->where('id',$pid)->value('ri');
+        $new_length = $len-$user->le-$length;
+
+        $this->model->whereIn('id',$chirdArr)->setInc('le',$new_length);
+        $this->model->whereIn('id',$chirdArr)->setInc('ri',$new_length);
+
+        $level = $p_data->level+1;
+
+        $new_level = $user->level-$level;
+
+        $levelwhere = [
             ['le','>=',$user->le],
             ['ri','<=',$user->ri],
         ];
-        $this->model->where($condition)->setInc('le',$new_length);
-        $this->model->where($condition)->setInc('ri',$new_length);
-        return true;
+        $this->model->where($levelwhere)->setDec('level',$new_level);
+
+        $this->model->where('id',$userid)->update(['pid'=>$pid,'level'=>$level]);
+        //return true;
+    }
+    /*
+     * 查询下级集合
+     * @param $userid用户id
+     * */
+
+    public function find_chird_collection($le,$ri)
+    {
+        $where = [
+            ['le','>=',$le],
+            ['ri','<=',$ri],
+        ];
+
+        return $this->model->where($where)->column('id');
     }
 
 }
