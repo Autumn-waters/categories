@@ -34,14 +34,16 @@ class Category
     public function insert_user($pid=0)
     {
         if($pid){
-            $p_data = $this->model->find($pid);
-            $le = $p_data->ri;
+            $parent = $this->model->find($pid);
+
+            $le = $parent->ri;
+
             $this->model->where('ri','>=',$le)->setInc('ri',2);
+
             $this->model->where('le','>',$le)->setInc('le',2);
-            $ri = $le+1;
-            $level = $p_data->level+1;
-            //var_dump($level);exit;
-            return $this->model->save(['le'=>$le,'ri'=>$ri,'pid'=>$pid,'level'=>$level]);
+
+            return $this->model->save(['le'=>$le,'ri'=>$le+1,'pid'=>$pid,'level'=>$parent->level+1]);
+
         }
         $ri = $this->model->max('ri');
 
@@ -113,9 +115,7 @@ class Category
         $this->model->where($where1)->setDec('le',$length);
         $this->model->where($where)->setDec('ri',$length);
 
-
-        $len = $this->model->where('id',$pid)->value('ri');
-        $new_length = $len-$user->le-$length;
+        $new_length = $p_data->ri-$user->le-$length;
 
         $this->model->whereIn('id',$chirdArr)->setInc('le',$new_length);
         $this->model->whereIn('id',$chirdArr)->setInc('ri',$new_length);
